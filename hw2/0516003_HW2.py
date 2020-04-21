@@ -120,7 +120,7 @@ while threshold < train_times[-1][0]:   ## if the threshold still less than last
     if first_dist is None:  ## if it's the distribution of first slot
         first_dist = pos_cnt>neg_cnt
     elif (pos_cnt>neg_cnt) != first_dist: ## if the distribution is different with first slot
-        cur_idx -= neg_cnt
+        cur_idx -= neg_cnt+pos_cnt
         break
     
     threshold += 0.05
@@ -128,16 +128,16 @@ while threshold < train_times[-1][0]:   ## if the threshold still less than last
 ## get the threshold vector
 thres_pt = train_times[cur_idx][0]*w
 
-## plot original testing data point
-plt.scatter(x_test[y_test == 0][:, 0], x_test[y_test == 0][:, 1], c='blue', s=10)
-plt.scatter(x_test[y_test == 1][:, 0], x_test[y_test == 1][:, 1], c='red', s=10)
+## plot original training data point
+plt.scatter(x_train[y_train == 0][:, 0], x_train[y_train == 0][:, 1], c='purple', s=10, edgecolors='black')
+plt.scatter(x_train[y_train == 1][:, 0], x_train[y_train == 1][:, 1], c='yellow', s=10, edgecolors='black')
 
 ## plot project line
 project_line = np.dot(w, np.array([[x for x in range(-8, 8)]]))
-plt.plot(project_line[0], project_line[1])
+plt.plot(project_line[0], project_line[1], c='red')
 
 ## plot decision boundary (orthogonal vector with project line, plus threshold vector)
-plt.plot(-project_line[1]+thres_pt[0], project_line[0]+thres_pt[1])
+plt.plot(-project_line[1]+thres_pt[0], project_line[0]+thres_pt[1], c='green')
 
 ## limit the axis of plot between -2 and 5
 plt.axis([-2, 5, -2, 5])
