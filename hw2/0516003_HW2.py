@@ -87,59 +87,32 @@ for test_idx in range(len(test_times)):
 acc = accuracy_score(y_test, y_pred)
 print(f"Accuracy of test-set {acc}")
 #######################################################################
-## 6. Plot the 1) projection line 2) Decision boundary and colorize the data with each class
+## 6. Plot the 1) best projection line on the training data and show the slope and intercept on the title (you can choose any value of intercept for better visualization) 
+##             2) colorize the data with each class
+##             3) project all data points on your projection line. Your result should look like the below image
 
-## Prepare training data point for decision boundary
-train_times = train_times.tolist()  
-for idx in range(len(train_times)):
-    ## each element of train_times would be [orig_number, data label]
-    train_times[idx].append(y_train[idx])
-## sort it based on the distance
-train_times = sorted(train_times, key=lambda x: x[0])
-
-## Find the interval which label distribution changed from one label to another label
-### here we set every slot distance of distribution would be 0.05w
-threshold = train_times[0][0] + 0.05
-
-cur_idx = 0 ## current index
-first_dist = None   ## to record the distribution of first slot, True and False to indicate positive and negative
-while threshold < train_times[-1][0]:   ## if the threshold still less than last element
-    pos_cnt, neg_cnt = 0, 0 ## positive and negative count
-    while train_times[cur_idx][0] < threshold:
-        if train_times[cur_idx][1] == 1:
-            pos_cnt += 1
-        else:
-            neg_cnt += 1
-        cur_idx += 1
-
-    ## if there's no point in this interval, continue
-    if pos_cnt == 0 and neg_cnt == 0:
-        threshold += 0.05
-        continue
-
-    if first_dist is None:  ## if it's the distribution of first slot
-        first_dist = pos_cnt>neg_cnt
-    elif (pos_cnt>neg_cnt) != first_dist: ## if the distribution is different with first slot
-        cur_idx -= neg_cnt+pos_cnt
-        break
-    
-    threshold += 0.05
-
-## get the threshold vector
-thres_pt = train_times[cur_idx][0]*w
+proj_train_pt = np.dot(x_train, w)*w.T
 
 ## plot original training data point
-plt.scatter(x_train[y_train == 0][:, 0], x_train[y_train == 0][:, 1], c='purple', s=10, edgecolors='black')
-plt.scatter(x_train[y_train == 1][:, 0], x_train[y_train == 1][:, 1], c='yellow', s=10, edgecolors='black')
+plt.scatter(x_train[y_train == 0][:, 0], x_train[y_train == 0][:, 1], c='blue', s=15, edgecolors='black', zorder=2)
+plt.scatter(x_train[y_train == 1][:, 0], x_train[y_train == 1][:, 1], c='red', s=15, edgecolors='black', zorder=2)
 
 ## plot project line
 project_line = np.dot(w, np.array([[x for x in range(-8, 8)]]))
-plt.plot(project_line[0], project_line[1], c='red')
+plt.plot(project_line[0], project_line[1], c='green', zorder=1)
 
-## plot decision boundary (orthogonal vector with project line, plus threshold vector)
-plt.plot(-project_line[1]+thres_pt[0], project_line[0]+thres_pt[1], c='green')
+## plot projected point
+plt.scatter(proj_train_pt[y_train == 0][:, 0], proj_train_pt[y_train == 0][:, 1], c='blue', s=15, edgecolors='black', zorder=2)
+plt.scatter(proj_train_pt[y_train == 1][:, 0], proj_train_pt[y_train == 1][:, 1], c='red', s=15, edgecolors='black', zorder=2)
+
+## plot the project route
+for pj_pt, orig_pt in zip(proj_train_pt[y_train == 0], x_train[y_train == 0]):
+    plt.plot([pj_pt[0], orig_pt[0]], [pj_pt[1], orig_pt[1]], c='#DCB5FF', linewidth=0.5, zorder=0)
+for pj_pt, orig_pt in zip(proj_train_pt[y_train == 1], x_train[y_train == 1]):
+    plt.plot([pj_pt[0], orig_pt[0]], [pj_pt[1], orig_pt[1]], c='#FFED97', linewidth=0.5, zorder=0)
 
 ## limit the axis of plot between -2 and 5
 plt.axis([-2, 5, -2, 5])
 
+plt.title(f'Projection Line: w={w[1][0]/w[0][0]}, b={0}')
 plt.show()
