@@ -64,7 +64,7 @@ def grid_search(x_train, y_train, kfold_idx, c_list, gamma_list, model=SVC):
     score_list = []
     k = len(kfold_idx)
 
-    best_c, best_gamma, best_acc = None, None, 0
+    best_c, best_gamma, best_acc = None, None, None
     for cur_c in c_list:
         score_list.append([])
         for cur_gamma in gamma_list:
@@ -73,12 +73,25 @@ def grid_search(x_train, y_train, kfold_idx, c_list, gamma_list, model=SVC):
             for data in kfold_idx:
                 clf = model(C=cur_c, kernel='rbf', gamma=cur_gamma)
                 clf = clf.fit(x_train[data[0]], y_train[data[0]])
-                mean_train_acc += clf.score(x_train[data[0]], y_train[data[0]])
-                mean_val_acc += clf.score(x_train[data[1]], y_train[data[1]])
+
+                if model == SVR:
+                    y_pred = clf.predict(x_train[data[0]])
+                    mean_train_acc += mean_squared_error(y_train[data[0]], y_pred)
+                    y_pred = clf.predict(x_train[data[1]])
+                    mean_val_acc += mean_squared_error(y_train[data[1]], y_pred)
+                else:
+                    mean_train_acc += clf.score(x_train[data[0]], y_train[data[0]])
+                    mean_val_acc += clf.score(x_train[data[1]], y_train[data[1]])
             mean_train_acc = mean_train_acc/k
             mean_val_acc = mean_val_acc/k
             score_list[-1].append(mean_val_acc)
-            if best_acc < mean_val_acc:
+            if best_acc is None:
+                best_acc = mean_val_acc
+                best_c, best_gamma = cur_c, cur_gamma
+            elif model == SVR and best_acc > mean_val_acc:
+                best_acc = mean_val_acc
+                best_c, best_gamma = cur_c, cur_gamma
+            elif model != SVR and best_acc < mean_val_acc:
                 best_acc = mean_val_acc
                 best_c, best_gamma = cur_c, cur_gamma
 
@@ -93,8 +106,8 @@ for i in range(1, 10):
     gamma_list.append(base_gamma*(2**i))
 
 best, score_list = grid_search(x_train, y_train, kfold_data, c_list, gamma_list)
-c, gamma, acc = best
-print(f'C: {c}, Gamma: {gamma}, Val acc: {acc}')
+best_c, best_gamma, best_acc = best
+print(f'C: {best_c}, Gamma: {best_gamma}, Val acc: {best_acc}')
 
 
 # ## Question 3
@@ -102,7 +115,7 @@ print(f'C: {c}, Gamma: {gamma}, Val acc: {acc}')
 # You reults should be look like the reference image ![image](https://miro.medium.com/max/1296/1*wGWTup9r4cVytB5MOnsjdQ.png)
 fig, ax = plt.subplots()
 
-im = ax.matshow(score_list, cmap='seismic')
+im = ax.matshow(score_list)
 
 for (i, j), value in np.ndenumerate(score_list):
     ax.text(j, i, f'{value:.2f}', ha='center', va='center')
@@ -118,7 +131,7 @@ plt.show()
 # ## Question 4
 # Train your SVM model by the best parameters you found from question 2 on the whole training set and evaluate the performance on the test set. **You accuracy should over 0.85**
 
-best_model = SVC(C=25.6, kernel='rbf', gamma=0.0004)
+best_model = SVC(C=best_c, kernel='rbf', gamma=best_gamma)
 best_model = best_model.fit(x_train, y_train)
 
 y_pred = best_model.predict(x_test)
@@ -152,11 +165,11 @@ for i in range(1, 10):
 # grid search
 best, score_list = grid_search(x_train, y_train, kfold_data, c_list, gamma_list, model=SVR)
 c, gamma, acc = best
-print(f'C: {c}, Gamma: {gamma}, Val score: {acc}')
+print(f'C: {c}, Gamma: {gamma}, Val MSE: {acc}')
 
 # plot matshow
 fig, ax = plt.subplots()
-im = ax.matshow(score_list, cmap='seismic')
+im = ax.matshow(score_list)
 for (i, j), value in np.ndenumerate(score_list):
     ax.text(j, i, f'{value:.2f}', ha='center', va='center')
 ax.set_xticklabels(['']+gamma_list)
